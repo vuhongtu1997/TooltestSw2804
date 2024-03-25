@@ -1,0 +1,312 @@
+device id: 06f5e910-2082-11ed-9486-3f72f140aece
+
+- start scan device
+two way request
+http://112.137.129.232:3725/api/plugins/rpc/twoway/06f5e910-2082-11ed-9486-3f72f140aece
+{
+	"method": "LoraStartScan", //"BleStartScan"
+	"params": {
+		"time": 15
+	},
+	"timeout": 30000
+}
+
+* Sau khi gửi lệnh scan, lắng nghe bản tin telemetry của gateway, nếu có bản tin chứa HaveNewDevice thì gọi get new device list
+- get new device list
+{
+	"method": "GetScanDevice",
+	"params": null,
+	"timeout": 30000
+}
+
+phản hồi: // trả về mảng thiết bị
+{
+	"count": <int>,
+	"devices": [
+		{
+			"mac": <string>,
+			"addr": <int>,
+			"type": <int>
+		}
+	]
+}
+
+- add new device (Modbus)
+http://112.137.129.232:3725/api/plugins/rpc/oneway/06f5e910-2082-11ed-9486-3f72f140aece
+{
+	"method": "AddDevice",
+	"params": {
+		"id": <id>,
+		"name": <name>,
+		"mac": <mac>,
+		"addr": 2,
+		"type": 4
+	}
+}
+
+- update all telemetry
+http://112.137.129.232:3725/api/plugins/rpc/oneway/06f5e910-2082-11ed-9486-3f72f140aece
+{
+	"method": "UpdateAllTelemetry",
+	"params": null
+}
+
+- Thêm group
+{
+	"method": "AddGroup",
+	"params": {
+		"id": 1,
+		"name": "Group 1"
+	}
+}
+
+- Xóa group
+{
+	"method": "DelGroup",
+	"params": {
+		"id": 1
+	}
+}
+
+- Thêm Device vào group
+{
+	"method": "AddDeviceToGroup",
+	"params": {
+		"groupId": 1,
+		"deviceMac": "14B0EB38C1A4"
+	}
+}
+
+- Xóa Device khỏi group
+{
+	"method": "DelDeviceFromGroup",
+	"params": {
+		"groupId": 1,
+		"deviceMac": "14B0EB38C1A4"
+	}
+}
+
+- Thêm Zigbee group
+{
+	"method": "ZigbeeAddGroup",
+	"params": {
+		"mac": "00158D0001019665",
+		"groupId": 1,
+		"epId": 1
+	}
+}
+
+
+- control a relay
+{
+	"method": "ControlRelay",
+	"params": {
+		"relay": 0,
+		"value": true
+	}
+}
+
+phản hồi:
+{
+  "relay_state": 129
+}
+
+- control all relay (phải có đủ các relay)
+{
+	"method": "ControlAllRelay",
+	"params": {
+		"all": 0
+	}
+}
+
+phản hồi:
+{
+  "relay_state": 129
+}
+
+- Lấy trạng thái relay
+{
+	"method": "UpdateAllTelemetry",
+	"params": null
+}
+
+phản hồi:
+{
+  "relay_state": 129
+}
+
+- Dimming
+{
+	"method": "SetDimming",
+	"params": {
+		"id": 0,
+		"value": 50
+	}
+}
+
+- Control Device
+{
+	"method": "ControlDevice",
+	"params": {
+		"mac": "18D11738C1A4",
+		"data": {
+			"method": "Dim",
+			"dim":50
+		}
+	}
+}
+
+- Control Group
+{
+	"method": "ControlGroup",
+	"params": {
+		"groupId": 1,
+		"data": {
+			"method": "Toggle"
+		}
+	}
+}
+
+
+- Rule
+{
+  "method": "AddRule",
+  "params": {
+    "id": 1,
+    "repeat": 255,
+    "fullDay": true,
+    "type": "or",
+    "startTime": "00:11",
+    "endTime": "11:23",
+    "input": {
+      "timer": {
+        "repeat": 255,
+        "time": "00:11"
+      },
+      "device": [
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "operator": ">",
+            "temp": 25
+          }
+        },
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "operator": ">",
+            "co2": 25
+          }
+        }
+      ]
+    },
+    "output": {
+      "device": [
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "method": "TurnOn"
+          }
+        }
+      ],
+      "relay": [
+        {
+          "relay": 0,
+          "value": 1
+        }
+      ]
+    }
+  }
+}
+type: or hoặc and
+repeat: thứ trong tuần, bit 0 đến bit 7
+time: thời gian trong ngày, mốc hoặc khoảng thời gian
+
+{
+  "method": "UpdateRule",
+  "params": {
+    "id": 1,
+    "repeat": 255,
+    "fullDay": true,
+    "type": "or",
+    "startTime": "00:11",
+    "endTime": "11:23",
+    "input": {
+      "timer": {
+        "repeat": 255,
+        "time": "00:11"
+      },
+      "device": [
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "operator": ">",
+            "temp": 25
+          }
+        },
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "operator": ">",
+            "co2": 25
+          }
+        }
+      ]
+    },
+    "output": {
+      "device": [
+        {
+          "mac": "18D11738C1A4",
+          "data": {
+            "method": "TurnOn"
+          }
+        },
+        {
+          "mac": "AABBCCDD",
+          "data": {
+            "param": "write_addr",
+            "value": 2
+          }
+        }
+      ],
+      "group": [
+        {
+          "id": 12,
+          "data": {
+            "method": "TurnOn"
+          }
+        }
+      ],
+      "relay": [
+        {
+          "relay": 0,
+          "value": 1
+        }
+      ]
+    }
+  }
+}
+
+
+{
+  "method": "DeleteRule",
+  "params": {
+    "id": 1
+	}
+}
+
+
+- SSH remote
+{
+	"method": "SSHRemote",
+	"params": {
+		"type":"base64",
+		"user":"thinpv",
+		"host":"192.168.90.70",
+		"serverPort":22,
+		"forwardPort":22222,
+		"localPort":22,
+		"key": "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJsd0FBQUFkemMyZ3RjbgpOaEFBQUFBd0VBQVFBQUFZRUFwRVNzVHZ6UVExL0hqOVVSMGRuS29HU0prRmcrd2tRVkxUS1I3dVVwRVJvdDhwS1B2Q3QxCjExcUQxRWI0MDJuM1JYUm94dVFjcFowUnFSZ2xuWkI5ZVYwL3kySDV4Vm5LZ3pkSTNtdms0VEdMem00dE53dTN2Q2dYQUQKT2FuRU5HdUVzY243RkNEQVl1OU9TQXg5YlV1TlpjNENXK25yaU1yMzBBbER6cU1xWmt2WDhTMFpBUkhVUE1yYnZtYk9SRwowN2hDb09KRnlOOThqODBKbDIvU2kzVU5MTEhxTzdRaUM1bTh3Mm01bmZPRldyOHFaVmFaSzJvT29TTHgxNWVKaXd5R0lLCnlqYzhaRTJQZjNIQU9HQmt5OFAzRHI4bUlhZ1VOUTA2L05RNXl4aEc4TjFiYUZaSFdUakZOOUcwQ3JKQ2JLY1dKRFlGYTkKc0dOaTdycGF5b214cEpUaDV3b0FaTXA2OWp6ZVlxUi9aN0JBakZjN0ZIdHhReFQ1UlRlekxjQ0xCRkZOVjhDRzhTSzY4dgpTdEZvOGxsM1BIVDFFUWxmc1ZvWVgxWEIzSDZ4YVoxQVUwS0J3VXlrQno1MHdmS0dxU3huQW9ka3c3ZmNQRExpQ0tXRHBuCi8zUlUzQ3R2MW9kN0sxMWlhbVg5K3dXU1FKV2N6SXgvWjdEWDBuZ3hBQUFGa0dmUnA5Qm4wYWZRQUFBQUIzTnphQzF5YzIKRUFBQUdCQUtSRXJFNzgwRU5meDQvVkVkSFp5cUJraVpCWVBzSkVGUzB5a2U3bEtSRWFMZktTajd3cmRkZGFnOVJHK05OcAo5MFYwYU1ia0hLV2RFYWtZSloyUWZYbGRQOHRoK2NWWnlvTTNTTjVyNU9FeGk4NXVMVGNMdDd3b0Z3QXptcHhEUnJoTEhKCit4UWd3R0x2VGtnTWZXMUxqV1hPQWx2cDY0aks5OUFKUTg2akttWkwxL0V0R1FFUjFEeksyNzVtemtSdE80UXFEaVJjamYKZkkvTkNaZHYwb3QxRFN5eDZqdTBJZ3Vadk1OcHVaM3poVnEvS21WV21TdHFEcUVpOGRlWGlZc01oaUNzbzNQR1JOajM5eAp3RGhnWk12RDl3Ni9KaUdvRkRVTk92elVPY3NZUnZEZFcyaFdSMWs0eFRmUnRBcXlRbXluRmlRMkJXdmJCall1NjZXc3FKCnNhU1U0ZWNLQUdUS2V2WTgzbUtrZjJld1FJeFhPeFI3Y1VNVStVVTNzeTNBaXdSUlRWZkFodkVpdXZMMHJSYVBKWmR6eDAKOVJFSlg3RmFHRjlWd2R4K3NXbWRRRk5DZ2NGTXBBYytkTUh5aHFrc1p3S0haTU8zM0R3eTRnaWxnNlovOTBWTndyYjlhSApleXRkWW1wbC9mc0Zra0NWbk15TWYyZXcxOUo0TVFBQUFBTUJBQUVBQUFHQVBMUEw0Tngzc1k0QlZ0dHIzRnBaRUhCV2pXCnF1dG1jbVZDOXQwaFFJMnZNTHE2b1JSMzNmN0JiY3hHTDlyRkpxTjlaT3FjQzkvVTFQcTJicTc1RG5iU1BTWVR2eGFzWkYKbWJ1aVI5OGpFenlWNTFDN2tLM1oxY1FTeTlaRitoeTZVM3dlTmJ6eEpUUmJ3YzkyNzJJcDlhdnhZanRRZDZMSENrcHRIbApwc1NROUlCdWFnYzZTRFRvY3hhYm9YNm9GbzB2QXlYdlYreUQ0ZDc1M2JQNFRwRHZQUVRJWHFndW1MOHpGNm1kUEY3ZUtCCmt3azFoNEU2MU5vNlViMXlGVE0vM3VoYjNKMGxHSlBSY0cySk1PZUVJNTgrRUFGb1l3cnh1UURnMXRaM2Y2U0xwVUhKQ3kKNXB4WGp1SnM5aXZsMkZvbjJjSWVEc2h3aWc0YjlSYXhnSUNLRENvWER2Um5WRlJTQlg4Q1dPMVZoOHlLTk5la0dyMGFQQwpaSnVqZTVocnkvUUI3ZGNiZ2IxOEFuaGpNS3pobWdrT3NiVENuTVVUU0pnTWg3K2R2YlNXbDlqT0dKazdmOXZUeUkyRzlZCm1DcmVrcnJSNVZoK1grL2ZBUXVxSW1WZ3R1aFpRNkRCSVh4d2xMNmdKc0dGWFdhS3lyVjg0OHQ4aDhsR05TWUpsaEFBQUEKd0hLVE5EcW9hNXhVc1RYY0pRSVhUU1FWL3NZZzBuWEN4YlRjYkdMbkIra29wVGNoRkhGa016eDZXbjBiNkg4VEJKYngxMApzbGJDRlVHVmFMajE2VWRWc2pMUVRXdUZuSVVuVzNuNytiME1sVG0rMjMwcFR1VG92S3FleGplRDlUdG9EZ0JiSW9lanFQClhTMlArUWVvUnBBZHZray9MUkZRb1JzUFBqWlFyaU5QbHdRbGw4VnBzSUdLeGRDRXRGMHVZQkkvVEFBS1FDY1BTVlNsK0kKWnR5aVpwUnFKYXZUODUxaXg1MjFTUjVENEJaZWNTNjJZZGNJTGtWcU9CaSs0bHVBQUFBTUVBMDl4ZFhIa2JZb2VlNVROLwoweGthdVJsOTRvL1YzdWZRTDlqMnhPemdtcC9MU1ZHVDgzQmxaT3JEd3lLNUNWRkZqTXNzNnZBclptNURMOW9YWmVIWjJFCmRqcXZ6dmVaSXdMemNNMzVhaWQ1c3hrWTBRWnJyN2N6V0xCdXdnNzVhL294dE9PRnA3eFp2UmV1K3VkSDdYTU5Cb25VK0wKL3hpK3ZSdzZ6MTluVFNpVVo1Wll0amlud0wxd1BaUENBZDh4SmMvMjBSckJCNGpyemVFY2grbVRhUlp4Szk1LzRucllaTApvVHF4M3RMakYxNHppdmRacFFqT2ZsdmxXc0twblZBQUFBd1FER2ZmTjY1TTNyMEtEMTFEaGlncVdJcC9KbytraFMva1J3CitSbDVWNUM4a0hPMTZPcG9wMTFxTnJ5WG8rS085a1NNR1BpcnRPVlgzblZjWEliUGRxWmNCVUdnVnU0T3lxQnMvY2ZaYUkKaUx0NmVzMDVHWGdlMUZVQmJRVnEydDc5dHFWL2VmdnlrV1ByR3k5SThId0VyUi9mdzVTOTVHaFBvOXVMbWhsbVhWYmNtOQpPUjFQTVROK093WUJ3eXhiUXh3bGgreTNEUjEwOFBJb25MVmdtN2E1MklFL3dlVDBmTkZ4djZ4dHp5SVVGR2o5Rzg1aTh5Ckc3dFdIeDZnT2kxdTBBQUFBVmRHaHBibkIyUUhSb2FXNXdkaTFOVXkwM1F6ZzRBUUlEQkFVRwotLS0tLUVORCBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0K"
+	},
+	"timeout": 30000
+}
