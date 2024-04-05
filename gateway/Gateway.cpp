@@ -16,12 +16,17 @@
 
 Gateway *gateway = NULL;
 
+string messageReqSocket = "{\"dsID\":\"HCRemoteMonitor\",\"reqType\":\"query\",\"queryAddr\":[\"Addr-811\"]}";
+string messageRepButtonSocket = "{\"dsID\":\"HCRemoteMonitor\",\"reqType\":\"query\",\"queryAddr\":[\"Addr-812\"]}";
+
 Gateway::Gateway(string mac, int port, string ip, string localAddress, int localPort, string localClientid, string localUsername, string localPassword, int localKeepalive) : SocketProtocol(port, ip),
 																																											  LocalProtocol(mac, localAddress, localPort, localClientid, localUsername, localPassword, localKeepalive)
 {
 	this->mac = mac;
 	this->id = "";
 	this->data = "";
+	this->isTesting = false;
+	this->addrDevTesting = 0;
 }
 
 Gateway::~Gateway()
@@ -30,40 +35,139 @@ Gateway::~Gateway()
 
 void Gateway::init()
 {
+	SocketProtocol::setMessageSend(messageReqSocket);
 	SocketProtocol::init();
 	LocalProtocol::init();
+	InitSocketMessage();
+	InitMqttLocalMessage();
+	LocalConnect();
 }
 
 void Gateway::InitSocketMessage()
 {
-	SocketCmdCallbackRegister("start", bind(&Gateway::OnSocketStart, this, placeholders::_1, placeholders::_2));
+	SocketCmdCallbackRegister("HCRemoteMonitor", bind(&Gateway::OnSocketStart, this, placeholders::_1, placeholders::_2));
 	SocketCmdCallbackRegister("stop", bind(&Gateway::OnSocketStop, this, placeholders::_1, placeholders::_2));
+}
+
+Json::Value Gateway::SocketCmdStartCheck(Json::Value &dataRspLocal)
+{
+	Json::Value result = Json::objectValue;
+	bleProtocol->SetOnOffLight(65535, 0, 0, false);
+	bleProtocol->SetOnOffLight(65535, 0, 0, false);
+	bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting, 255, 0, 0, 255, 100, 20);
+	if (bleProtocol->addrDevTesting != addrDevTesting) // dang test thiet bi cu
+	{
+		LocalProtocol::PublishToLocalMessage(dataRspLocal);
+	}
+	addrDevTesting = bleProtocol->addrDevTesting;
+	return result;
+}
+
+Json::Value Gateway::SocketCmdButtonCheck(Json::Value &dataRspLocal)
+{
+	Json::Value result = Json::objectValue;
+	dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting, 1, 0, true);
+	dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 1, 1, 0, true);
+	dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 2, 1, 0, true);
+	dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 3, 1, 0, true);
+
+	dataRspLocal["load1"] = dataRspLocal["touch1"];
+	dataRspLocal["load2"] = dataRspLocal["touch2"];
+	dataRspLocal["load3"] = dataRspLocal["touch3"];
+	dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+	dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting, 0, 128, 255, 0, 100, 20);
+	dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+	dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
+	dataRspLocal["rgb4"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 3, 0, 128, 255, 0, 100, 20);
+
+	string rs = "1";
+	if (dataRspLocal["touch1"] != CODE_OK ||
+		dataRspLocal["touch1"] != CODE_OK ||
+		dataRspLocal["touch1"] != CODE_OK ||
+		dataRspLocal["touch1"] != CODE_OK ||
+		dataRspLocal["load1"] != CODE_OK ||
+		dataRspLocal["load2"] != CODE_OK ||
+		dataRspLocal["load3"] != CODE_OK ||
+		dataRspLocal["load4"] != CODE_OK ||
+		dataRspLocal["rgb1"] != CODE_OK ||
+		dataRspLocal["rgb2"] != CODE_OK ||
+		dataRspLocal["rgb3"] != CODE_OK ||
+		dataRspLocal["rgb4"] != CODE_OK)
+	{
+		rs = "0";
+	}
+	result["dsID"] = "HCRemoteMonitor";
+	result["reqType"] = "command";
+	Json::Value arrayJson = Json::arrayValue;
+	arrayJson.append("rewriteData");
+	arrayJson.append(SOCKET_ADDR_FINISH);
+	arrayJson.append(rs);
+	result["cmdData"] = arrayJson;
+
+	return result;
+}
+
+void Gateway::PushLocalResult(Json::Value data)
+{
+	if (!data.empty())
+	{
+		Json::Value rs = Json::objectValue;
+		rs["cmd"] = "resultTestSwitch";
+		rs["rqi"] = "rangdong2804";
+		rs["data"] = data;
+		LocalProtocol::PublishToLocalMessage(rs);
+	}
 }
 
 int Gateway::OnSocketStart(Json::Value &reqValue, Json::Value &respValue)
 {
-	LOGD("Start test");
-
-	uint8_t b = 1;
-	uint8_t r = 1;
-	uint8_t g = 1;
-	int rssi = rand() % 100;
-	int rgb = CODE_OK;
-	for (int i = 0; i < 4; i++)
+	respValue = Json::objectValue;
+	if (reqValue.isMember("queryAddr") && reqValue["queryAddr"].isArray() &&
+		reqValue.isMember("queryData") && reqValue["queryData"].isArray() &&
+		reqValue.isMember("reqType") && reqValue["reqType"].isString())
 	{
-		if (bleProtocol->ControlRgbSwitch(bleProtocol->getAddrDevTesting(), i + 1, b, g, r, 100, 20) != CODE_OK)
+		Json::Value queryDataJson = reqValue["queryData"];
+		Json::Value queryAddrJson = reqValue["queryAddr"];
+		string reqTypeStr = reqValue["reqType"].asString();
+		if (queryDataJson.size() == 1 && queryAddrJson.size() == 1)
 		{
-			rgb = CODE_ERROR;
-			break;
+			if ((queryDataJson[0].isString()) && queryAddrJson[0].isString())
+			{
+				LOGE("TP1");
+				if (queryAddrJson[0].asString() == SOCKET_ADDR_START)
+				{
+					LOGE("TP2");
+					if (queryDataJson[0].asString() == "1")
+					{
+						LOGE("TP3");
+						respValue = SocketCmdStartCheck(dataRspLocal);
+						// SocketProtocol::setMessageSend(messageRepButtonSocket);
+
+						respValue = SocketCmdButtonCheck(dataRspLocal);
+						PushLocalResult(dataRspLocal);
+						dataRspLocal.clear();
+						SocketProtocol::setMessageSend(messageReqSocket);
+					}
+				}
+				else if (queryAddrJson[0].asString() == SOCKET_ADDR_BUTTON)
+				{
+					respValue = SocketCmdButtonCheck(dataRspLocal);
+					LocalProtocol::PublishToLocalMessage(dataRspLocal);
+					dataRspLocal.clear();
+					SocketProtocol::setMessageSend(messageReqSocket);
+				}
+			}
 		}
 	}
-
-	// for ()
-	
+	else
+		LOGW("Data error: %s", reqValue.toString().c_str());
+	return CODE_OK;
 }
 
 int Gateway::OnSocketStop(Json::Value &reqValue, Json::Value &respValue)
 {
+	return CODE_OK;
 }
 
 void Gateway::InitMqttLocalMessage()
@@ -75,6 +179,7 @@ void Gateway::InitMqttLocalMessage()
 
 int Gateway::OnDeviceTest(Json::Value &reqValue, Json::Value &respValue)
 {
+	return CODE_OK;
 }
 
 int Gateway::OnStartScanBle(Json::Value &reqValue, Json::Value &respValue)

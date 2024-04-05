@@ -13,6 +13,7 @@ static void HandleInMessage(Uart *uart);
 
 Uart::Uart(char *port, int baudrate, int timeout) : port(port), baudrate(baudrate), timeout(timeout)
 {
+	LOGD("Uart init %s, %d", port, baudrate);
 }
 
 Uart::~Uart()

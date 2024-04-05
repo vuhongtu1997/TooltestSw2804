@@ -8,7 +8,7 @@
 #define STR(x) STR_(x)
 
 #ifndef VERSION
-#define VERSION 2.0.0
+#define VERSION 2.0.1
 #endif
 
 #define CONFIG_FILE_NAME "/root/smh/config.json"
@@ -18,6 +18,6 @@
 #endif
 
 #ifndef BLE_UART_PORT
-#define BLE_UART_PORT "/dev/ttyS1"
+#define BLE_UART_PORT "/dev/ttyUSB0"
 #endif
 

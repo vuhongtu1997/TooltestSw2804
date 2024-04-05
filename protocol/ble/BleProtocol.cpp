@@ -92,11 +92,6 @@ void BleProtocol::setBleDevicekey(string devicekey)
 	this->ble_devicekey = devicekey;
 }
 
-void BleProtocol::setAddrDevTesting(uint16_t addrDev)
-{
-	this->addrDevTesting = addrDev;
-}
-
 static void AddDeviceThread(void *data)
 {
 	BleProtocol *bleProtocol = (BleProtocol *)data;
@@ -278,12 +273,22 @@ void BleProtocol::CheckOpcodeException(message_rsp_st *message_rsp)
 		{
 			uint16_t dev_addr;
 			uint16_t gw_addr;
+			uint8_t opcodeVendor;
+			uint16_t vendorId;
+			uint16_t header;
 			uint8_t data[100];
 		} data_message_t;
 		data_message_t *data_message = (data_message_t *)message_rsp->data;
 		uint16_t opcode = data_message->data[0] | (data_message->data[1] << 8);
 		uint16_t header = data_message->data[3] | (data_message->data[4] << 8);
-		setAddrDevTesting(data_message->dev_addr);
+		if (data_message->header == 0x090b)
+		{
+			
+			addrDevTesting = data_message->dev_addr;
+			// ControlRgbSwitch(addrDevTesting, 255, 255, 0, 0, 100, 20);
+			// ControlRgbSwitch(addrDevTesting, 255, 0, 0, 255, 100, 20);
+			// setAddrDevTesting(data_message->dev_addr);
+		}
 		break;
 	}
 
@@ -302,7 +307,7 @@ void BleProtocol::CheckOpcodeException(message_rsp_st *message_rsp)
 
 int BleProtocol::OnMessage(unsigned char *data, int len)
 {
-	// LOGD("OnMessage len: %d", len);
+	LOGD("OnMessage len: %d", len);
 	uint8_t *d = data;
 	int l = len;
 	message_rsp_st *message_rsp = NULL;

@@ -18,9 +18,13 @@ SocketProtocol::SocketProtocol(int port, string ip) : port(port), ip(ip)
 	this->ip = ip;
 }
 
+SocketProtocol::~SocketProtocol()
+{
+}
+
 static void SocketHandleMessage(void *data)
 {
-	LOGI("Start UdpHandleMessage");
+	LOGI("Start SocketHandleMessage");
 	SocketProtocol *socketProtocol = (SocketProtocol *)data;
 	struct sockaddr_in server_address;
 
@@ -36,7 +40,7 @@ static void SocketHandleMessage(void *data)
 
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(socketProtocol->port);
-	if ((socketProtocol->fd = inet_pton(AF_INET, socketProtocol->ip.c_str(), &server_address.sin_addr)) <= 0)
+	if (inet_pton(AF_INET, socketProtocol->ip.c_str(), &server_address.sin_addr) <= 0)
 	{
 		LOGE("Invalid address/ Address not supported");
 		exit(1);
@@ -47,10 +51,16 @@ static void SocketHandleMessage(void *data)
 		LOGE("Connection failed");
 		exit(1);
 	}
-
 	while (socketProtocol->isRunning)
 	{
 		LOGI("Socket Waiting for data...");
+		socketProtocol->mtxSendMessage.lock();
+		if (socketProtocol->listMessages.size() > 0)
+		{
+			socketProtocol->sendMessage(socketProtocol->listMessages.at(0));
+		}
+		socketProtocol->mtxSendMessage.unlock();
+		// socketProtocol->sendMessage("Hello from client");
 		fflush(stdout);
 
 		// try to receive some data, this is a blocking call
@@ -62,7 +72,10 @@ static void SocketHandleMessage(void *data)
 
 		buffer[bytes_received] = '\0';
 		socketProtocol->SocketOnMessage(string(buffer));
+		// usleep(500);
+		sleep(1);
 	}
+	close(socketProtocol->fd);
 }
 
 void SocketProtocol::init()
@@ -89,18 +102,22 @@ int SocketProtocol::SocketCmdCallbackRegister(string cmd, OnRpcCallbackFunc onRp
 
 void SocketProtocol::SocketOnMessage(string message)
 {
-	LOGD("SocketOnMessage message: %s", message.c_str());
+	LOGI("SocketOnMessage message: %s", message.c_str());
 	Json::Value respValue;
 	Json::Value payloadJson;
 	if (payloadJson.parse(message) && payloadJson.isObject())
 	{
 		string cmd = "";
-		if (payloadJson.isMember("cmd") && payloadJson["cmd"].isString())
+		if (payloadJson.isMember("dsID") && payloadJson["dsID"].isString())
 		{
-			cmd = payloadJson["cmd"].asString();
+			cmd = payloadJson["dsID"].asString();
 		}
-		if (cmd != "")
+		if (cmd == "HCRemoteMonitor")
 		{
+			mtxSendMessage.lock();
+			listMessages.clear();
+			mtxSendMessage.unlock();
+
 			if (onRpcCallbackFuncList.find(cmd) != onRpcCallbackFuncList.end())
 			{
 				OnRpcCallbackFunc onRpcCallbackFunc = onRpcCallbackFuncList[cmd];
@@ -151,11 +168,32 @@ void SocketProtocol::SocketOnMessage(string message)
 
 int SocketProtocol::sendMessage(string message)
 {
-	LOGD("send message: %s", message.c_str());
-	if (send(fd, message.c_str(), message.length(), 0) == -1)
+	LOGI("send message: %s", message.c_str());
+	if (send(this->fd, message.c_str(), message.length(), 0) == -1)
 	{
 		LOGW("Socket send error");
 		return CODE_ERROR;
 	}
+	LOGE("Send success");
 	return CODE_OK;
+}
+
+void SocketProtocol::setMessageSend(Json::Value data, int timeReq)
+{
+	mtxSendMessage.lock();
+	for (int i = 0; i < timeReq; i++)
+	{
+		listMessages.push_back(data.toString());
+	}
+	mtxSendMessage.unlock();
+}
+
+void SocketProtocol::setMessageSend(string data, int timeReq)
+{
+	mtxSendMessage.lock();
+	for (int i = 0; i < timeReq; i++)
+	{
+		listMessages.push_back(data);
+	}
+	mtxSendMessage.unlock();
 }

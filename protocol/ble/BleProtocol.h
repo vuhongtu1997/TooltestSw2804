@@ -244,8 +244,6 @@ private:
 	uint16_t ble_addr;
 	uint32_t ble_iv_index;
 
-	uint16_t addrDevTesting;
-
 	int OnMessage(unsigned char *data, int len);
 	int SendMessage(uint16_t opReq, uint8_t *dataReq, int lenReq, uint8_t opRsp, uint8_t *dataRsp, int *lenRsp, uint32_t timeout, uint8_t *compare_data = 0, int compare_position = 0, int compare_len = 0);
 
@@ -256,6 +254,7 @@ public:
 	atomic<bool> isInitKey;
 	scan_device_message_t scanDeviceMessage;
 	scan_device_pair_message_t scanDevicePairMessage;
+	uint16_t addrDevTesting;
 
 	BleProtocol(char *uartPort, int uartBaudrate);
 	virtual ~BleProtocol();
@@ -273,7 +272,6 @@ public:
 	void setBleNetkey(string netkey);
 	void setBleAppkey(string appkey);
 	void setBleDevicekey(string devicekey);
-	void setAddrDevTesting(uint16_t addrDev);
 
 	int GetOpcodeExceptionMessage(message_rsp_st **data);
 	void CheckOpcodeException(message_rsp_st *message);
