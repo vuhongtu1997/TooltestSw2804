@@ -27,6 +27,12 @@ Gateway::Gateway(string mac, int port, string ip, string localAddress, int local
 	this->data = "";
 	this->isTesting = false;
 	this->addrDevTesting = 0;
+
+	// listErrorTouch13.push_back(9);
+	listErrorTouch24.push_back(9);
+	// listErrorRgb4.push_back(9);
+	// listErrorRgb34.push_back(9);
+	// listErrorRgb234.push_back(9);
 }
 
 Gateway::~Gateway()
@@ -57,7 +63,7 @@ Json::Value Gateway::SocketCmdStartCheck(Json::Value &dataRspLocal)
 	bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting, 255, 0, 0, 255, 100, 20);
 	if (bleProtocol->addrDevTesting != addrDevTesting) // dang test thiet bi cu
 	{
-		LocalProtocol::PublishToLocalMessage(dataRspLocal);
+		// LocalProtocol::PublishToLocalMessage(dataRspLocal);
 	}
 	addrDevTesting = bleProtocol->addrDevTesting;
 	return result;
@@ -66,20 +72,109 @@ Json::Value Gateway::SocketCmdStartCheck(Json::Value &dataRspLocal)
 Json::Value Gateway::SocketCmdButtonCheck(Json::Value &dataRspLocal)
 {
 	Json::Value result = Json::objectValue;
-	dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting, 1, 0, true);
-	dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 1, 1, 0, true);
-	dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 2, 1, 0, true);
-	dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(bleProtocol->addrDevTesting + 3, 1, 0, true);
+	addrDevTesting = bleProtocol->addrDevTesting;
+	if (checkTypeError(addrDevTesting) == 0)
+	{
+		dataRspLocal["touch1"] = 1;
+		dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(addrDevTesting + 1, 1, 0, true);
+		dataRspLocal["touch3"] = 1;
+		dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(addrDevTesting + 3, 1, 0, true);
 
-	dataRspLocal["load1"] = dataRspLocal["touch1"];
-	dataRspLocal["load2"] = dataRspLocal["touch2"];
-	dataRspLocal["load3"] = dataRspLocal["touch3"];
-	dataRspLocal["load4"] = dataRspLocal["touch4"];
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
 
-	dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting, 0, 128, 255, 0, 100, 20);
-	dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
-	dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
-	dataRspLocal["rgb4"] = bleProtocol->ControlRgbSwitch(bleProtocol->addrDevTesting + 3, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb4"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 3, 0, 128, 255, 0, 100, 20);
+	}
+	else if (checkTypeError(addrDevTesting) == 1)
+	{
+		dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(addrDevTesting, 1, 0, true);
+		dataRspLocal["touch2"] = 1;
+		dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(addrDevTesting + 2, 1, 0, true);
+		dataRspLocal["touch4"] = 1;
+
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb4"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 3, 0, 128, 255, 0, 100, 20);
+	}
+	else if (checkTypeError(addrDevTesting) == 2)
+	{
+		dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(addrDevTesting, 1, 0, true);
+		dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(addrDevTesting + 1, 1, 0, true);
+		dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(addrDevTesting + 2, 1, 0, true);
+		dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(addrDevTesting + 3, 1, 0, true);
+
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb4"] = 1;
+	}
+	else if (checkTypeError(addrDevTesting) == 3)
+	{
+		dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(addrDevTesting, 1, 0, true);
+		dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(addrDevTesting + 1, 1, 0, true);
+		dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(addrDevTesting + 2, 1, 0, true);
+		dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(addrDevTesting + 3, 1, 0, true);
+
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb3"] = 1;
+		dataRspLocal["rgb4"] = 1;
+	}
+	else if (checkTypeError(addrDevTesting) == 4)
+	{
+		dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(addrDevTesting, 1, 0, true);
+		dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(addrDevTesting + 1, 1, 0, true);
+		dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(addrDevTesting + 2, 1, 0, true);
+		dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(addrDevTesting + 3, 1, 0, true);
+
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = 1;
+		dataRspLocal["rgb3"] = 1;
+		dataRspLocal["rgb4"] = 1;
+	}
+	else
+	{
+		dataRspLocal["touch1"] = bleProtocol->SetOnOffLight(addrDevTesting, 1, 0, true);
+		dataRspLocal["touch2"] = bleProtocol->SetOnOffLight(addrDevTesting + 1, 1, 0, true);
+		dataRspLocal["touch3"] = bleProtocol->SetOnOffLight(addrDevTesting + 2, 1, 0, true);
+		dataRspLocal["touch4"] = bleProtocol->SetOnOffLight(addrDevTesting + 3, 1, 0, true);
+
+		dataRspLocal["load1"] = dataRspLocal["touch1"];
+		dataRspLocal["load2"] = dataRspLocal["touch2"];
+		dataRspLocal["load3"] = dataRspLocal["touch3"];
+		dataRspLocal["load4"] = dataRspLocal["touch4"];
+
+		dataRspLocal["rgb1"] = bleProtocol->ControlRgbSwitch(addrDevTesting, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb2"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 1, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb3"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 2, 0, 128, 255, 0, 100, 20);
+		dataRspLocal["rgb4"] = bleProtocol->ControlRgbSwitch(addrDevTesting + 3, 0, 128, 255, 0, 100, 20);
+	}
 
 	string rs = "1";
 	if (dataRspLocal["touch1"] != CODE_OK ||
@@ -134,13 +229,10 @@ int Gateway::OnSocketStart(Json::Value &reqValue, Json::Value &respValue)
 		{
 			if ((queryDataJson[0].isString()) && queryAddrJson[0].isString())
 			{
-				LOGE("TP1");
 				if (queryAddrJson[0].asString() == SOCKET_ADDR_START)
 				{
-					LOGE("TP2");
 					if (queryDataJson[0].asString() == "1")
 					{
-						LOGE("TP3");
 						respValue = SocketCmdStartCheck(dataRspLocal);
 						// SocketProtocol::setMessageSend(messageRepButtonSocket);
 
@@ -272,4 +364,39 @@ void Gateway::setVersion(string version)
 
 void Gateway::setName(string name)
 {
+}
+
+int Gateway::checkTypeError(uint16_t devAddr)
+{
+	for (auto &adr : listErrorTouch13)
+	{
+		if (devAddr == adr)
+			return 0;
+	}
+
+	for (auto &adr : listErrorTouch24)
+	{
+		if (devAddr == adr)
+			return 1;
+	}
+
+	for (auto &adr : listErrorRgb4)
+	{
+		if (devAddr == adr)
+			return 2;
+	}
+
+	for (auto &adr : listErrorRgb34)
+	{
+		if (devAddr == adr)
+			return 3;
+	}
+
+	for (auto &adr : listErrorRgb234)
+	{
+		if (devAddr == adr)
+			return 4;
+	}
+
+	return -1;
 }

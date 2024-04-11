@@ -212,6 +212,7 @@ int Mqtt::Unsubscribe(string topic, int maxTime, int duration)
 
 int Mqtt::Publish(string topic, string payload)
 {
+	LOGI("Local public topic: %s, message: %s", topic.c_str(), payload.c_str());
 	return Publish(topic, payload.c_str(), payload.length());
 }
 

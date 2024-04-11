@@ -32,6 +32,12 @@ private:
 
 	Json::Value dataRspLocal;
 
+	vector <uint16_t> listErrorTouch13;
+	vector <uint16_t> listErrorTouch24;
+	vector <uint16_t> listErrorRgb4;
+	vector <uint16_t> listErrorRgb34;
+	vector <uint16_t> listErrorRgb234;
+
 public:
 	Gateway(string mac, int port, string ip, string localAddress, int localPort, string localClientid, string localUsername, string localPassword, int localKeepalive);
 	~Gateway();
@@ -64,6 +70,8 @@ public:
 	void setVersion(string version);
 	void setName(string name);
 	void setData(string data);
+
+	int checkTypeError(uint16_t devAddr);
 };
 
 extern Gateway *gateway;
